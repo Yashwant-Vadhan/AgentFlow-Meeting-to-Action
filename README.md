@@ -79,8 +79,8 @@ meeting-to-action/
 
 ```bash
 # Clone the repo
-git clone <repo-url>
-cd meeting-to-action
+git clone https://github.com/Yashwant-Vadhan/AgentFlow-Meeting-to-Action
+cd AgentFlow-Meeting-to-Action
 
 # Copy env template and fill in your API keys
 cp .env.example .env
