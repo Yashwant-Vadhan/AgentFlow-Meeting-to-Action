@@ -1,0 +1,58 @@
+# --- Secrets & environment ---
+.env
+.env.local
+.env.*.local
+*.key
+credentials.json
+client_secret*.json
+
+# --- Python (backend) ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node (frontend) ---
+node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Database ---
+*.db
+*.sqlite
+*.sqlite3
+
+# --- n8n ---
+n8n_data/
+.n8n/
+
+# --- Audio/test artifacts (avoid bloating repo with sample recordings) ---
+*.wav
+*.mp3
+*.m4a
+uploads/
+backend/eval/test_transcripts/*.wav
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# --- Planning docs kept local, not pushed ---
+todo.md
+docs/todo.md
