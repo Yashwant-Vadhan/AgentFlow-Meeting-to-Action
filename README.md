@@ -18,7 +18,7 @@ AgentFlow is an **agentic AI pipeline, orchestrated in n8n**, that converts meet
 Audio Upload
     │
     ▼
-Whisper Transcription
+Whisper Transcription (local)
     │
     ▼
 Extractor Agent (LLM)  →  pulls candidate decisions/action items, grounded in a source quote
@@ -27,7 +27,7 @@ Extractor Agent (LLM)  →  pulls candidate decisions/action items, grounded in 
 Verifier Agent (LLM)   →  cross-checks each item against the transcript, rejects hallucinations/duplicates
     │
     ▼
-n8n Orchestration      →  routes verified tasks to Trello, Google Calendar, and notifications
+n8n Orchestration      →  routes verified tasks to Trello, Google Calendar, and chat notifications
     │
     ▼
 Live Dashboard         →  shows transcript + task pipeline status in real time
@@ -37,11 +37,12 @@ Two LLM agents (Extractor + Verifier) give the system a self-checking loop, so t
 
 ## Key Features
 
-- 🎙️ **Speech-to-text** via local Whisper (`faster-whisper`) — no per-minute API cost
-- 🤖 **Dual-agent extraction** — an Extractor Agent proposes tasks, a Verifier Agent grounds each one against the transcript before it's trusted
-- 🔗 **n8n-orchestrated routing** — verified tasks flow to Trello, Google Calendar, and notifications automatically
+- 🎙️ **Speech-to-text** via local Whisper (`faster-whisper`) — runs entirely on-device, no external transcription service required
+- 🤖 **Dual-agent extraction** — an Extractor Agent proposes tasks, a Verifier Agent grounds each one against the transcript before it's trusted, powered by a local LLM served via Ollama
+- 🔗 **n8n-orchestrated routing** — verified tasks flow to Trello, Google Calendar, and chat notifications automatically
 - 📊 **Live dashboard** — watch the pipeline work end-to-end: transcript → extracted → verified → routed
 - ✅ **Human-in-the-loop** — low-confidence items are flagged `needs_review` with manual approve/reject controls, never silently dropped or silently auto-approved
+- 🐳 **Self-contained by design** — the full pipeline runs locally via Docker Compose, no external hosting account required to demo it
 
 ## Tech Stack
 
@@ -50,13 +51,13 @@ Two LLM agents (Extractor + Verifier) give the system a self-checking loop, so t
 | Frontend | React (Vite) + Tailwind CSS |
 | Backend | Python + FastAPI |
 | Speech-to-Text | `faster-whisper` (local) |
-| LLM (Extractor + Verifier) | Configurable — OpenAI `gpt-4o-mini` or Anthropic `claude-haiku` |
-| Orchestration | n8n (self-hosted via Docker, or n8n Cloud) |
+| LLM (Extractor + Verifier) | Ollama, running a configurable open-source model (e.g., `llama3.1` or `mistral`) |
+| Orchestration | n8n (self-hosted via Docker) |
 | Database | SQLite |
 | Task Board | Trello |
-| Calendar | Google Calendar API |
-| Notifications | Discord/Slack webhook or SMTP email |
-| Hosting | Vercel (frontend) · Render/Railway (backend + n8n) |
+| Calendar | Google Calendar API (optional) |
+| Notifications | Discord webhook or Telegram Bot |
+| Deployment | Docker Compose (local, primary target) — cloud hosting optional |
 
 Full architecture rationale and alternatives considered: [`docs/TECH_RULES.md`](docs/TECH_RULES.md).
 
@@ -79,27 +80,20 @@ meeting-to-action/
 
 ```bash
 # Clone the repo
-git clone https://github.com/Yashwant-Vadhan/AgentFlow-Meeting-to-Action
-cd AgentFlow-Meeting-to-Action
+git clone <repo-url>
+cd meeting-to-action
 
-# Copy env template and fill in your API keys
+# Copy env template and fill in your config
 cp .env.example .env
 
-# Backend
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+# Pull a local model for Ollama (one-time)
+ollama pull llama3.1
 
-# Frontend
-cd frontend
-npm install
-npm run dev
-
-# n8n
-docker-compose up n8n
+# Bring up the full stack — backend, frontend, and n8n
+docker-compose up
 ```
 
-Required keys (see `.env.example`): LLM provider API key, Trello API key, Google Calendar credentials, notification webhook URL.
+Required config (see `.env.example`): `OLLAMA_HOST` / `OLLAMA_MODEL`, Trello API key, Google Calendar credentials (optional), notification webhook URL (Discord/Telegram).
 
 ## Evaluation
 

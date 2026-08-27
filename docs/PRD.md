@@ -49,7 +49,7 @@
 ### Routing / Orchestration
 - As a user, I want verified tasks automatically created on Trello so I don't have to manually enter them.
 - As a user, I want tasks with a deadline to also create a calendar entry.
-- As a user, I want the assigned owner to get a notification (e.g., email or chat message) summarizing their task.
+- As a user, I want the assigned owner to get a notification (e.g., a chat message) summarizing their task.
 
 ### Dashboard
 - As a user, I want to see the live transcript and the extracted/verified action items in one place during and right after the meeting, so the pipeline is visibly working (this is also the primary demo surface).
@@ -95,7 +95,7 @@
 - **Outputs:** Trello card created, Calendar event created (if deadline present), notification sent (if owner present).
 - **User Actions:** None (automatic); n8n workflow visible for demo purposes.
 - **Validation Rules:** Retry failed API calls (Trello/Calendar/notification) up to 3 times before flagging as failed on the dashboard.
-- **Edge Cases:** Trello API rate limit hit, owner has no known contact/email mapping, duplicate webhook delivery (idempotency needed).
+- **Edge Cases:** Trello API rate limit hit, owner has no known chat handle/contact mapping, duplicate webhook delivery (idempotency needed).
 
 ### Module: Dashboard
 - **Description:** Web UI showing live transcript, extracted/verified items with status, and links to created Trello cards/calendar events.
@@ -108,18 +108,18 @@
 ## Non-Functional Requirements
 - **Performance:** End-to-end (audio-ready → task routed) under 60s for a 10-minute meeting on the demo machine; dashboard updates within 2s of a backend state change.
 - **Scalability:** MVP targets single-meeting, single-session use (no multi-tenant requirement); design should not block adding concurrent sessions later.
-- **Security:** All API keys (LLM, Trello, Calendar) stored as environment variables, never committed to the repo or exposed to the frontend.
+- **Security:** All API keys and connection settings (Trello, Calendar, notification webhook, local LLM endpoint) stored as environment variables, never committed to the repo or exposed to the frontend.
 - **Accessibility:** Dashboard should meet basic keyboard-navigable and readable-contrast standards (WCAG AA is a stretch goal, not a hard MVP requirement given the timeline).
 - **Reliability:** Pipeline should degrade gracefully — if the Verifier Agent fails, extracted items still show on the dashboard as "needs_review" rather than the whole run failing silently.
 - **Maintainability:** Each agent (Extractor, Verifier) is a standalone, independently testable module with a documented prompt and JSON schema.
 
 ## Assumptions & Constraints
-- Team has **no existing accounts/setup** for n8n, an LLM API, Trello, or Whisper — all setup starts from zero (confirmed by team).
-- Timeline: **today (Aug 13, 2026) to first week of September 2026 (~3.5 weeks)** — MVP scope must be realistic for this window.
+- Team has **no existing accounts/setup** for n8n, Trello, or the local LLM/Whisper environment — all setup starts from zero (confirmed by team).
+- Timeline: **~3.5 weeks from project kickoff to submission** — MVP scope must be realistic for this window (see ROADMAP.md for the day-by-day breakdown).
 - MVP uses **uploaded audio files**, not true real-time streaming (live streaming is a stretch goal / future enhancement given the time budget).
-- LLM choice: any capable API-based model (e.g., OpenAI GPT-4o-mini or Anthropic Claude Haiku/Sonnet) — exact choice finalized in TECH_RULES.md, primarily on cost/free-credit availability to the team.
-- Whisper can run via a hosted API or locally (`faster-whisper` / `openai-whisper`) — final choice depends on available compute (see TECH_RULES.md).
-- No dedicated backend infra/hosting budget assumed — free tiers (Render/Railway/Vercel, n8n Cloud free tier or self-hosted via Docker) are the default.
+- LLM choice: a locally-hosted open-source model served via Ollama (e.g., `llama3.1` or `mistral`) — exact model finalized in TECH_RULES.md, abstracted behind a thin client so it can be swapped without code changes.
+- Whisper runs locally via `faster-whisper` — keeps transcription self-contained with no external dependency (see TECH_RULES.md).
+- No dedicated backend infra/hosting budget assumed — the guaranteed setup is local Docker Compose (backend + self-hosted n8n); cloud hosting is an optional convenience layer on top, not a requirement.
 
 ## MVP Scope
 
@@ -130,7 +130,7 @@
 
 ### Should Have
 - Calendar event creation for deadline-bearing tasks.
-- Notification (email or chat) to task owner.
+- Notification (chat message, e.g. Discord or Telegram) to task owner.
 - Manual approve/reject on dashboard for `needs_review` items.
 
 ### Nice To Have
