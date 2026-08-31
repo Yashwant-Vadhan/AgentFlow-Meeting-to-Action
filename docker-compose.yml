@@ -1,0 +1,86 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Meeting-to-Action — Docker Compose (TG-003)
+#
+# Usage:
+#   docker-compose up --build
+#
+# Services:
+#   backend  — FastAPI + Uvicorn (port 8000)
+#   n8n      — Self-hosted n8n Community Edition (port 5678)
+#
+# Both services share the `mta-network` so backend can call n8n via
+#   N8N_WEBHOOK_URL=http://n8n:5678/webhook/verified-task
+#
+# All secrets loaded from .env (see .env.example for the full list).
+# No paid API key is required for the core pipeline.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mta-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # LLM — Ollama runs on the HOST machine; host.docker.internal resolves to it
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1}
+      # n8n webhook — backend calls n8n via the Docker service name
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://n8n:5678/webhook/verified-task}
+      DATABASE_URL: ${DATABASE_URL:-sqlite+aiosqlite:///./meeting_to_action.db}
+      MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-200}
+      WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE:-base}
+    volumes:
+      - backend-uploads:/app/uploads
+      - backend-db:/app
+    networks:
+      - mta-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: mta-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Basic n8n config
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: ${N8N_PUBLIC_URL:-http://localhost:5678}
+      # Generic timezone
+      GENERIC_TIMEZONE: Asia/Kolkata
+      # Disable telemetry
+      N8N_DIAGNOSTICS_ENABLED: "false"
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      - mta-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  n8n-data:
+    # n8n workflow data persists across container restarts
+    # gitignored — not committed to the repo
+  backend-uploads:
+  backend-db:
+
+networks:
+  mta-network:
+    driver: bridge
