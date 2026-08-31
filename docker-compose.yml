@@ -24,6 +24,8 @@ services:
       dockerfile: Dockerfile
     container_name: mta-backend
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     environment:
@@ -51,6 +53,8 @@ services:
     image: n8nio/n8n:latest
     container_name: mta-n8n
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "5678:5678"
     environment:
