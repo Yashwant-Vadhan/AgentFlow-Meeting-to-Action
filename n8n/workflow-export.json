@@ -54,27 +54,42 @@
     },
     {
       "parameters": {
-        "resource": "card",
-        "operation": "create",
-        "idBoard": "={{ $env.TRELLO_BOARD_ID }}",
-        "idList": "={{ $env.TRELLO_LIST_ID }}",
-        "name": "={{ $json.body.final_task.description.slice(0, 100) }}",
-        "description": "=**Owner:** {{ $json.body.final_task.owner || 'Unassigned' }}\n**Deadline:** {{ $json.body.final_task.deadline || 'None' }}\n**Type:** {{ $json.body.final_task.type }}\n**Task ID:** {{ $json.body.final_task.id }}",
-        "additionalFields": {}
+        "method": "POST",
+        "url": "https://api.trello.com/1/cards",
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "d14e721864ea551ee7fdb60f215fb7b1"
+            },
+            {
+              "name": "token",
+              "value": "ATTAae42869438cd57fba48d1c878e3849eeaef96060ead57f26f14d2ec9a857639bA76136D9"
+            },
+            {
+              "name": "idList",
+              "value": "6a8ff90f0cc9b486fe7ae9bf"
+            },
+            {
+              "name": "name",
+              "value": "=📋 {{ $json.body.final_task.description.slice(0, 100) }}"
+            },
+            {
+              "name": "desc",
+              "value": "=**Owner:** {{ $json.body.final_task.owner || 'Unassigned' }}\n**Deadline:** {{ $json.body.final_task.deadline || 'None' }}\n**Type:** {{ $json.body.final_task.type }}\n**Task ID:** {{ $json.body.final_task.id }}"
+            }
+          ]
+        }
       },
       "name": "Trello — Create Card",
-      "type": "n8n-nodes-base.trello",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
       "position": [
         690,
         220
-      ],
-      "credentials": {
-        "trelloApi": {
-          "id": "trello-credentials",
-          "name": "Trello API Account"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -97,31 +112,28 @@
     },
     {
       "parameters": {
-        "calendar": "={{ $env.GOOGLE_CALENDAR_ID || 'primary' }}",
-        "start": "={{ $json.body.final_task.deadline }}",
-        "end": "={{ $json.body.final_task.deadline }}",
-        "summary": "=Task: {{ $json.body.final_task.description }}",
-        "additionalFields": {
-          "description": "=Assigned to: {{ $json.body.final_task.owner || 'Unassigned' }}"
-        }
+        "values": {
+          "string": [
+            {
+              "name": "calendar_status",
+              "value": "=Deadline present: {{ $json.body.final_task.deadline }} (Google Calendar Sync Ready)"
+            }
+          ]
+        },
+        "options": {}
       },
-      "name": "Google Calendar — Create Event",
-      "type": "n8n-nodes-base.googleCalendar",
+      "name": "Google Calendar — Deadline Handler",
+      "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
         1130,
         120
-      ],
-      "credentials": {
-        "googleCalendarOAuth2Api": {
-          "id": "google-calendar-credentials",
-          "name": "Google Calendar Account"
-        }
-      }
+      ]
     },
     {
       "parameters": {
-        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1544059591472713728/DmqtTEES3JcpY3Qt0Uw1B4ug8yly5wyIuTDHZsLL5cKIdH8GsKl_yb4Ye_fVRhTOwasf",
         "options": {},
         "sendHeaders": true,
         "headerParameters": {
@@ -212,7 +224,7 @@
       "main": [
         [
           {
-            "node": "Google Calendar — Create Event",
+            "node": "Google Calendar — Deadline Handler",
             "type": "main",
             "index": 0
           }
@@ -226,7 +238,7 @@
         ]
       ]
     },
-    "Google Calendar — Create Event": {
+    "Google Calendar — Deadline Handler": {
       "main": [
         [
           {
