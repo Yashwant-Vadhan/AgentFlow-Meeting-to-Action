@@ -17,11 +17,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-import httpx
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.websocket import broadcast
 from app.config import get_settings
 from app.models.schema import (
     FinalTask,
@@ -31,8 +31,12 @@ from app.models.schema import (
     SessionModel,
     SessionResponse,
     TaskItemModel,
+    TranscriptSegmentModel,
     VerificationStatus,
 )
+from app.pipeline.audio_preprocess import chunk_audio, preprocess_audio
+from app.pipeline.orchestrator import process_session
+from app.pipeline.transcribe import transcribe_chunk
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +51,93 @@ async def get_db():
         yield session
 
 
+# ── Background Pipeline Task ──────────────────
+async def run_audio_pipeline(session_id: str, audio_path: str):
+    """
+    Background pipeline worker for a session:
+    1. Preprocesses audio (volume normalization / noise reduction)
+    2. Chunks audio into ~30-60s segments
+    3. Transcribes each chunk using Whisper & broadcasts transcript segments over WS
+    4. Persists transcript segments to SQLite
+    5. Triggers orchestrator (Extractor -> Verifier -> n8n routing)
+    """
+    from app.main import async_session
+
+    logger.info(f"Starting background audio pipeline for session {session_id}")
+    try:
+        await broadcast(session_id, {
+            "type": "pipeline_status",
+            "stage": "preprocess",
+            "status": "running",
+            "message": "Preprocessing audio...",
+        })
+
+        # 1. Preprocess
+        cleaned_path = preprocess_audio(audio_path)
+
+        # 2. Chunking
+        chunks = chunk_audio(cleaned_path)
+        logger.info(f"Session {session_id}: {len(chunks)} chunk(s) to transcribe")
+
+        # 3. Transcribe & stream
+        await broadcast(session_id, {
+            "type": "pipeline_status",
+            "stage": "transcribe",
+            "status": "running",
+            "message": "Transcribing audio with Whisper...",
+        })
+
+        async with async_session() as db:
+            for chunk_file in chunks:
+                segments = transcribe_chunk(chunk_file)
+                for seg in segments:
+                    # Save DB segment
+                    db_seg = TranscriptSegmentModel(
+                        session_id=session_id,
+                        start_time=seg["start"],
+                        end_time=seg["end"],
+                        text=seg["text"],
+                        low_confidence=seg.get("low_confidence", False),
+                    )
+                    db.add(db_seg)
+
+                    # Broadcast WS message
+                    await broadcast(session_id, {
+                        "type": "transcript_segment",
+                        "session_id": session_id,
+                        "data": seg,
+                    })
+
+            await db.commit()
+
+        await broadcast(session_id, {
+            "type": "pipeline_status",
+            "stage": "transcribe",
+            "status": "done",
+            "message": "Transcription complete",
+        })
+
+        # 4. Trigger Extractor -> Verifier -> Routing
+        async with async_session() as db:
+            await process_session(session_id, db)
+
+    except Exception as e:
+        logger.error(f"Background pipeline failed for session {session_id}: {e}", exc_info=True)
+        await broadcast(session_id, {
+            "type": "pipeline_status",
+            "stage": "pipeline",
+            "status": "error",
+            "message": str(e),
+        })
+
+        async with async_session() as db:
+            session = await db.get(SessionModel, session_id)
+            if session:
+                session.status = "error"
+                session.error_message = str(e)
+                await db.commit()
+
+
 # ═══════════════════════════════════════════════
 # POST /api/v1/sessions — Upload audio & create session
 # ═══════════════════════════════════════════════
@@ -54,6 +145,7 @@ async def get_db():
 
 @router.post("/sessions", response_model=SessionResponse)
 async def create_session(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     name: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db),
@@ -66,8 +158,8 @@ async def create_session(
     """
     settings = get_settings()
 
-    # ── Validate file type ──
-    allowed_types = {".mp3", ".wav", ".m4a"}
+    # ── Validate file type (supports audio and video) ──
+    allowed_types = {".mp3", ".wav", ".m4a", ".mp4", ".mov", ".mkv", ".webm"}
     ext = Path(file.filename or "").suffix.lower()
     if ext not in allowed_types:
         raise HTTPException(
@@ -76,7 +168,6 @@ async def create_session(
         )
 
     # ── Validate file size ──
-    # Read the file to check size (and save it)
     content = await file.read()
     if len(content) > settings.max_upload_size_bytes:
         raise HTTPException(
@@ -106,8 +197,8 @@ async def create_session(
 
     logger.info(f"Session created: {session_id} ({session_name}), file: {audio_path}")
 
-    # TODO: Trigger background processing pipeline here
-    # (will be wired by Yashwant in TY-004)
+    # Trigger background pipeline
+    background_tasks.add_task(run_audio_pipeline, session_id, str(audio_path))
 
     return SessionResponse(
         id=session_id,
@@ -178,6 +269,14 @@ async def get_session(
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
 
+    # Get all transcript segments
+    segments_result = await db.execute(
+        select(TranscriptSegmentModel)
+        .where(TranscriptSegmentModel.session_id == session_id)
+        .order_by(TranscriptSegmentModel.start_time)
+    )
+    segments = segments_result.scalars().all()
+
     # Get all task items
     items_result = await db.execute(
         select(TaskItemModel)
@@ -192,6 +291,15 @@ async def get_session(
         "status": session.status,
         "created_at": session.created_at.isoformat(),
         "error_message": session.error_message,
+        "transcript_segments": [
+            {
+                "start": seg.start_time,
+                "end": seg.end_time,
+                "text": seg.text,
+                "low_confidence": seg.low_confidence,
+            }
+            for seg in segments
+        ],
         "items": [
             {
                 "id": item.id,

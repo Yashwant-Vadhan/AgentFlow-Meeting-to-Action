@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "llama3.1"
 
+    # ── Whisper STT ───────────────────────────────
+    whisper_model_size: str = "base"
+    whisper_device: str = "cpu"
+
     # ── Database ──────────────────────────────────
     database_url: str = "sqlite+aiosqlite:///./meeting_to_action.db"
 

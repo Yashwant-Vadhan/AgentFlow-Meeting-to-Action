@@ -18,6 +18,19 @@ version: "3.9"
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mta-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - mta-network
+
   backend:
     build:
       context: ./backend
