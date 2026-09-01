@@ -221,15 +221,11 @@ def preprocess_audio(input_path: str) -> str:
 
 def chunk_audio(audio_path: str, target_seconds: int = 45) -> list[str]:
     """
-<<<<<<< HEAD
-    Split audio into 30-60 second chunks for processing.
-=======
     Split audio into ~30–60 second chunks, preferring silence boundaries.
 
     Uses pydub's silence detection to find natural break points near the
     target chunk length. If no suitable silence gap exists near the target,
     falls back to a hard cut at target_seconds.
->>>>>>> main
 
     Args:
         audio_path: Path to a preprocessed audio file.
@@ -242,41 +238,6 @@ def chunk_audio(audio_path: str, target_seconds: int = 45) -> list[str]:
         FileNotFoundError: If audio_path does not exist.
         RuntimeError: If audio cannot be loaded or chunked.
     """
-<<<<<<< HEAD
-    if not os.path.exists(audio_path):
-        return [audio_path]
-
-    try:
-        from pydub import AudioSegment
-        from pydub.silence import split_on_silence
-
-        audio = AudioSegment.from_file(audio_path)
-        duration_sec = len(audio) / 1000.0
-
-        # If audio is under 60 seconds, no chunking needed
-        if duration_sec <= 60:
-            return [audio_path]
-
-        # Chunk audio every ~45 seconds
-        target_ms = target_seconds * 1000
-        chunks = []
-        base, _ = os.path.splitext(audio_path)
-
-        for i, start_ms in enumerate(range(0, len(audio), target_ms)):
-            end_ms = min(start_ms + target_ms, len(audio))
-            chunk_segment = audio[start_ms:end_ms]
-            chunk_file = f"{base}_chunk_{i}.wav"
-            chunk_segment.export(chunk_file, format="wav")
-            chunks.append(chunk_file)
-
-        logger.info(f"Chunked {audio_path} into {len(chunks)} segments (~{target_seconds}s each)")
-        return chunks
-
-    except Exception as e:
-        logger.warning(f"Audio chunking failed: {e}. Returning full file as single chunk.")
-        return [audio_path]
-
-=======
     audio_file = Path(audio_path)
 
     if not audio_file.exists():
@@ -382,4 +343,3 @@ def chunk_audio(audio_path: str, target_seconds: int = 45) -> list[str]:
     )
 
     return chunk_paths
->>>>>>> main
