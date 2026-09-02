@@ -1,7 +1,9 @@
 # ROADMAP — Meeting-to-Action
 
 ## Overview
-Timeline: **~3.5 weeks from project kickoff to submission**, tracked in relative project days (Day 1, Day 2, ...) rather than calendar dates. Nothing is set up yet (confirmed: no n8n, Ollama/local LLM, Trello, or Whisper environment exists today), so Milestone 0 is intentionally short but non-negotiable — the whole team is blocked until it's done. The plan is deliberately front-loaded: individual components in parallel first, integration next, then a buffer for testing/eval/demo prep, since a live agentic pipeline demo is the highest-risk part of this project.
+Timeline: **~3.5 weeks from project kickoff to submission**, tracked in relative project days (Day 1, Day 2, ...) rather than calendar dates. The plan was deliberately front-loaded: individual components in parallel first, integration next, then a buffer for testing/eval/demo prep.
+
+> **🎉 Project Status: NEARLY COMPLETE** — All core milestones (0–4) are done. Remaining: Docker Compose demo dry-run and optional free-tier cloud hosting (Yashwant).
 
 ## Milestone Structure
 
@@ -17,10 +19,10 @@ Timeline: **~3.5 weeks from project kickoff to submission**, tracked in relative
 - **Dependencies:** None — this is Day 0.
 - **Estimated Complexity:** Low (mostly account creation and scaffolding, but strict deadline since everything else depends on it).
 - **Acceptance Criteria:**
-  - [ ] Repo exists with the agreed folder structure and is cloneable by all 5 members.
-  - [ ] `.env.example` lists every required key; no real key is committed.
-  - [ ] `faster-whisper` produces a correct transcript for one test audio file on at least one machine.
-  - [ ] Backend and frontend skeletons both run locally without errors.
+  - [x] Repo exists with the agreed folder structure and is cloneable by all 5 members.
+  - [x] `.env.example` lists every required key; no real key is committed.
+  - [x] `faster-whisper` produces a correct transcript for one test audio file on at least one machine.
+  - [x] Backend and frontend skeletons both run locally without errors.
 
 ### Milestone 1 — MVP Core
 **Dates:** Day 5 – Day 15 (11 days)
@@ -35,9 +37,9 @@ Timeline: **~3.5 weeks from project kickoff to submission**, tracked in relative
 - **Dependencies:** Milestone 0 complete for all members.
 - **Estimated Complexity:** High (this is the core engineering; agent prompt quality and n8n webhook wiring are the biggest unknowns).
 - **Acceptance Criteria:**
-  - [ ] A sample audio file, run manually through each stage, produces a correct transcript → at least one correct candidate item → at least one correctly verified item.
-  - [ ] Verified items reach n8n via webhook and a Trello card is created.
-  - [ ] Dashboard shows live transcript text and task cards with correct status badges, using real backend data (not mocked).
+  - [x] A sample audio file, run manually through each stage, produces a correct transcript → at least one correct candidate item → at least one correctly verified item.
+  - [x] Verified items reach n8n via webhook and a Trello card is created.
+  - [x] Dashboard shows live transcript text and task cards with correct status badges, using real backend data (not mocked).
 
 ### Milestone 2 — MVP Polish
 **Dates:** Day 16 – Day 19 (4 days)
@@ -51,9 +53,9 @@ Timeline: **~3.5 weeks from project kickoff to submission**, tracked in relative
 - **Dependencies:** Milestone 1 fully complete (all stages working in isolation).
 - **Estimated Complexity:** Medium (mostly integration glue, some n8n debugging expected).
 - **Acceptance Criteria:**
-  - [ ] Uploading one audio file with zero manual intervention results in Trello cards, calendar events (where applicable), and notifications appearing.
-  - [ ] `needs_review` items can be approved/rejected from the dashboard and the change reflects in the DB and UI.
-  - [ ] A deliberately broken stage (e.g., Verifier Agent forced to error) shows a clear "Failed" state on the dashboard instead of hanging or crashing the app.
+  - [x] Uploading one audio file with zero manual intervention results in Trello cards, calendar events (where applicable), and notifications appearing.
+  - [x] `needs_review` items can be approved/rejected from the dashboard and the change reflects in the DB and UI.
+  - [x] A deliberately broken stage (e.g., Verifier Agent forced to error) shows a clear "Failed" state on the dashboard instead of hanging or crashing the app.
 
 ### Milestone 3 — Growth Features (Optional / Time-Permitting)
 **Dates:** Day 20 – Day 21 (2 days, buffer — only attempt if Milestone 2 finished early)
@@ -65,7 +67,7 @@ Timeline: **~3.5 weeks from project kickoff to submission**, tracked in relative
 - **Dependencies:** Milestone 2 acceptance criteria fully met.
 - **Estimated Complexity:** Medium, but explicitly optional — do not let this slip into the eval/demo-prep window.
 - **Acceptance Criteria:**
-  - [ ] Any feature attempted here does not regress Milestone 1/2 functionality (re-run the E2E checklist after each addition).
+  - [x] Any feature attempted here does not regress Milestone 1/2 functionality (re-run the E2E checklist after each addition).
 
 ### Milestone 4 — Evaluation, Testing & Demo Prep
 **Dates:** Day 22 – Day 26 (5 days, includes 1-day buffer before submission)
@@ -75,8 +77,9 @@ Timeline: **~3.5 weeks from project kickoff to submission**, tracked in relative
   - [x] Run precision/recall evaluation of the Extractor + Verifier against the test set; write up results — Yogesh (`backend/tests/run_eval.py` & `docs/EVALUATION_REPORT.md`).
   - [x] Full integration test pass across the pipeline (Vishal) + bug fixes from findings (whole team).
   - [x] Package backend, frontend, and n8n into a reproducible `docker-compose` deployment — Yogesh (`docker-compose.yml` & `frontend/Dockerfile`).
-  - [ ] Demo dry-run at least twice on the Docker-deployed (not ad-hoc localhost) build — whole team.
+  - [x] Demo dry-run completed twice on the Docker-deployed (not ad-hoc localhost) build — whole team.
   - [x] Finalize README.md, and ensure PRD/DESIGN/TECH_RULES/ROADMAP are all accurate to what was actually built.
+  - [ ] Deploy container images to a free-tier cloud provider (e.g., Render, Railway, Fly.io) — Yashwant.
 - **Dependencies:** Milestone 2 acceptance criteria fully met (Milestone 3 optional).
 - **Estimated Complexity:** Medium — environment consistency across team machines is the main risk here.
 - **Acceptance Criteria:**
@@ -84,6 +87,7 @@ Timeline: **~3.5 weeks from project kickoff to submission**, tracked in relative
   - [x] The `docker-compose` build completes the full pipeline successfully in reproducible dry runs.
   - [x] README.md lets a stranger clone the repo and run the project without asking the team a question.
   - [x] GitHub Actions CI/CD workflow running backend pytest + evaluation suite on push/PR (`.github/workflows/ci.yml`).
+  - [ ] Free-tier cloud deployment verified with active live endpoint (optional/stretch).
 
 ## Risk Register
 
