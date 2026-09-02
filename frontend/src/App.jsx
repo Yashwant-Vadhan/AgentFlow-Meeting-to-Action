@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Upload, History, RefreshCw, Layers, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Sparkles, Upload, History, RefreshCw, Layers, CheckCircle, Clock, AlertCircle, ExternalLink, Calendar, Workflow, Trello } from 'lucide-react';
 import UploadScreen from './components/UploadScreen.jsx';
 import TranscriptPane from './components/TranscriptPane.jsx';
 import TaskPipelinePane from './components/TaskPipelinePane.jsx';
@@ -92,8 +92,47 @@ export default function App() {
             </div>
           </div>
 
-          {/* Navigation Actions */}
-          <div className="flex items-center space-x-2.5">
+          {/* Quick Integration Links & Navigation Actions */}
+          <div className="flex items-center space-x-2">
+            {/* Direct Integration Buttons */}
+            <div className="hidden md:flex items-center space-x-1.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800/80 mr-1">
+              <a
+                href="http://localhost:5678"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all shadow-sm"
+                title="Open n8n Automation Canvas"
+              >
+                <Workflow className="w-3.5 h-3.5 text-rose-400" />
+                <span>n8n Workflow</span>
+                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+              </a>
+
+              <a
+                href="https://trello.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 transition-all shadow-sm"
+                title="Open Trello Board"
+              >
+                <Trello className="w-3.5 h-3.5 text-sky-400" />
+                <span>Trello</span>
+                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+              </a>
+
+              <a
+                href="https://calendar.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all shadow-sm"
+                title="Open Google Calendar"
+              >
+                <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Calendar</span>
+                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+              </a>
+            </div>
+
             {currentSession && (
               <button
                 onClick={handleNewUpload}
