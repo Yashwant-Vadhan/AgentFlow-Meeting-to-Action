@@ -1,0 +1,145 @@
+{
+  "description": "Ground truth evaluation dataset for AgentFlow Meeting-to-Action pipeline (TY-005)",
+  "version": "1.0",
+  "scenarios": [
+    {
+      "id": "scenario_01_sprint_sync",
+      "title": "Engineering Sprint Sync",
+      "transcript": "Yashwant: Welcome everyone. Let's do a quick sync on sprint deliverables.\nVishal: I have completed the noise reduction filters. I will finish the audio chunking by tomorrow 5 PM.\nYashwant: Great. Sushil, can you update the Verifier Agent prompt by Friday?\nSushil: Sure, I will refine the verification schema and push the PR by Friday evening.\nYaashwanth: I will assemble the frontend dashboard components by Monday morning.\nYashwant: Perfect. Let's make sure all PRs are submitted on time.",
+      "ground_truth": [
+        {
+          "action_item": "Finish audio chunking",
+          "owner": "Vishal",
+          "deadline": "tomorrow 5 PM",
+          "priority": "high",
+          "category": "engineering",
+          "source_quote": "I will finish the audio chunking by tomorrow 5 PM."
+        },
+        {
+          "action_item": "Update the Verifier Agent prompt and refine verification schema",
+          "owner": "Sushil",
+          "deadline": "Friday evening",
+          "priority": "medium",
+          "category": "engineering",
+          "source_quote": "can you update the Verifier Agent prompt by Friday?"
+        },
+        {
+          "action_item": "Assemble frontend dashboard components",
+          "owner": "Yaashwanth",
+          "deadline": "Monday morning",
+          "priority": "medium",
+          "category": "frontend",
+          "source_quote": "I will assemble the frontend dashboard components by Monday morning."
+        }
+      ]
+    },
+    {
+      "id": "scenario_02_product_planning",
+      "title": "Q3 Product Planning Meeting",
+      "transcript": "Alice: Thanks for joining. We need to finalize the roadmap for Q3.\nBob: I will draft the user onboarding spec and share it on Slack by Wednesday.\nCharlie: I'll review the database scaling proposal with the DevOps team by Thursday afternoon.\nAlice: Thanks Bob and Charlie. I will coordinate with the marketing team to prepare the launch announcement by next Monday.",
+      "ground_truth": [
+        {
+          "action_item": "Draft user onboarding spec and share on Slack",
+          "owner": "Bob",
+          "deadline": "Wednesday",
+          "priority": "high",
+          "category": "product",
+          "source_quote": "I will draft the user onboarding spec and share it on Slack by Wednesday."
+        },
+        {
+          "action_item": "Review database scaling proposal with DevOps team",
+          "owner": "Charlie",
+          "deadline": "Thursday afternoon",
+          "priority": "high",
+          "category": "infrastructure",
+          "source_quote": "I'll review the database scaling proposal with the DevOps team by Thursday afternoon."
+        },
+        {
+          "action_item": "Coordinate with marketing team to prepare launch announcement",
+          "owner": "Alice",
+          "deadline": "next Monday",
+          "priority": "medium",
+          "category": "marketing",
+          "source_quote": "I will coordinate with the marketing team to prepare the launch announcement by next Monday."
+        }
+      ]
+    },
+    {
+      "id": "scenario_03_incident_postmortem",
+      "title": "Production Outage Postmortem",
+      "transcript": "Dave: Let's review the API server crash from yesterday.\nEve: The root cause was an unhandled connection timeout in the DB pool. I will implement automated retry logic by 3 PM today.\nFrank: I will set up Prometheus alerts for DB pool exhaustion by tomorrow end of day.\nDave: I will write up the postmortem incident report and send it to stakeholders by Friday.",
+      "ground_truth": [
+        {
+          "action_item": "Implement automated retry logic for DB connection pool",
+          "owner": "Eve",
+          "deadline": "3 PM today",
+          "priority": "high",
+          "category": "backend",
+          "source_quote": "I will implement automated retry logic by 3 PM today."
+        },
+        {
+          "action_item": "Set up Prometheus alerts for DB pool exhaustion",
+          "owner": "Frank",
+          "deadline": "tomorrow end of day",
+          "priority": "high",
+          "category": "devops",
+          "source_quote": "I will set up Prometheus alerts for DB pool exhaustion by tomorrow end of day."
+        },
+        {
+          "action_item": "Write up postmortem incident report and send to stakeholders",
+          "owner": "Dave",
+          "deadline": "Friday",
+          "priority": "medium",
+          "category": "management",
+          "source_quote": "I will write up the postmortem incident report and send it to stakeholders by Friday."
+        }
+      ]
+    },
+    {
+      "id": "scenario_04_budget_review",
+      "title": "Quarterly Budget & Resource Review",
+      "transcript": "Grace: We need to align on the hardware procurement budget.\nHeidi: I will compare quotes from AWS and GCP for GPU instances by end of week.\nIvan: I will prepare the financial forecast spreadsheet for Q4 by next Tuesday.",
+      "ground_truth": [
+        {
+          "action_item": "Compare quotes from AWS and GCP for GPU instances",
+          "owner": "Heidi",
+          "deadline": "end of week",
+          "priority": "medium",
+          "category": "finance",
+          "source_quote": "I will compare quotes from AWS and GCP for GPU instances by end of week."
+        },
+        {
+          "action_item": "Prepare financial forecast spreadsheet for Q4",
+          "owner": "Ivan",
+          "deadline": "next Tuesday",
+          "priority": "medium",
+          "category": "finance",
+          "source_quote": "I will prepare the financial forecast spreadsheet for Q4 by next Tuesday."
+        }
+      ]
+    },
+    {
+      "id": "scenario_05_design_sprint",
+      "title": "UI/UX Design Review",
+      "transcript": "Judy: Let's review the new dashboard mockups.\nMallory: I will update the dark mode color scheme according to team feedback by Wednesday 12 PM.\nNaji: I'll conduct user usability testing with 5 participants by Friday.",
+      "ground_truth": [
+        {
+          "action_item": "Update dark mode color scheme based on feedback",
+          "owner": "Mallory",
+          "deadline": "Wednesday 12 PM",
+          "priority": "low",
+          "category": "design",
+          "source_quote": "I will update the dark mode color scheme according to team feedback by Wednesday 12 PM."
+        },
+        {
+          "action_item": "Conduct user usability testing with 5 participants",
+          "owner": "Naji",
+          "deadline": "Friday",
+          "priority": "high",
+          "category": "ux",
+          "source_quote": "I'll conduct user usability testing with 5 participants by Friday."
+        }
+      ]
+    }
+  ]
+}
