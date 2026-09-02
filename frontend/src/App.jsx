@@ -97,7 +97,7 @@ export default function App() {
             {/* Direct Integration Buttons */}
             <div className="hidden md:flex items-center space-x-1.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800/80 mr-1">
               <a
-                href="http://localhost:5678"
+                href={import.meta.env.VITE_N8N_URL || "http://localhost:5678"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all shadow-sm"
