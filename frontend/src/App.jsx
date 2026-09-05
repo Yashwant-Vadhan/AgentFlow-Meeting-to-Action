@@ -285,7 +285,7 @@ export default function App() {
                         </span>
                         <button
                           onClick={(e) => handleDeleteSession(s.id, e)}
-                          className="p-1 rounded-md text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-colors opacity-70 group-hover:opacity-100"
+                          className="p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 bg-red-500/10 border border-red-500/20 transition-all flex items-center justify-center shrink-0"
                           title="Delete session"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
