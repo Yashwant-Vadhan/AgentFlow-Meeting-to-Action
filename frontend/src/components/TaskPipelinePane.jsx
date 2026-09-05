@@ -14,15 +14,24 @@ import {
   Sparkles,
   RefreshCw,
   SlidersHorizontal,
+  Loader2,
+  Bot,
 } from 'lucide-react';
 
-export default function TaskPipelinePane({ sessionId, initialItems = [] }) {
+export default function TaskPipelinePane({ sessionId, initialItems = [], isProcessing = false }) {
   const [items, setItems] = useState(initialItems);
   const [expandedId, setExpandedId] = useState(null);
   const [filterType, setFilterType] = useState('all'); // all | action_item | decision
   const [updatingId, setUpdatingId] = useState(null);
   const [actionError, setActionError] = useState(null);
+  const [pipelineStage, setPipelineStage] = useState(null);
   const wsRef = useRef(null);
+
+  // Reset items when sessionId changes
+  useEffect(() => {
+    setItems(initialItems || []);
+    setPipelineStage(null);
+  }, [sessionId]);
 
   // Sync initial items
   useEffect(() => {
@@ -51,6 +60,9 @@ export default function TaskPipelinePane({ sessionId, initialItems = [] }) {
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+        if (message.type === 'pipeline_status') {
+          setPipelineStage(message);
+        }
         if (message.type === 'task_update' && message.data) {
           const updatedItem = message.data;
           setItems((prev) => {
@@ -245,17 +257,78 @@ export default function TaskPipelinePane({ sessionId, initialItems = [] }) {
       {/* Item List Container */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 min-h-[300px]">
         {filteredItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full min-h-[260px] text-center p-6 space-y-3">
-            <div className="w-12 h-12 rounded-full bg-slate-800/60 border border-slate-700/50 flex items-center justify-center text-slate-400 animate-subtle-pulse">
-              <ListCheck className="w-6 h-6" />
+          isProcessing || (pipelineStage && pipelineStage.status === 'running') ? (
+            <div className="flex flex-col items-center justify-center h-full min-h-[260px] text-center p-6 space-y-4">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600/20 to-indigo-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-lg shadow-purple-500/10 animate-subtle-pulse">
+                  <Bot className="w-7 h-7" />
+                </div>
+                <div className="absolute -top-1 -right-1">
+                  <span className="flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1.5 max-w-sm">
+                <p className="text-sm font-semibold text-slate-200 flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
+                  {pipelineStage?.stage === 'extractor'
+                    ? 'Extractor Agent Analyzing Transcript...'
+                    : pipelineStage?.stage === 'verifier'
+                    ? 'Verifier Agent Validating Tasks...'
+                    : pipelineStage?.stage === 'router'
+                    ? 'Routing Tasks to n8n...'
+                    : 'AI Extractor Agent Processing Transcript...'}
+                </p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {pipelineStage?.message ||
+                    'Local Llama 3.1 is analyzing the transcript to detect candidate action items, assignees, and deadlines. Items will stream in live.'}
+                </p>
+              </div>
+
+              {/* Progress Stage Badges */}
+              <div className="flex items-center gap-2 pt-2 text-[11px] text-slate-400">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                  ✓ Audio Transcribed
+                </span>
+                <span>→</span>
+                <span
+                  className={`px-2.5 py-0.5 rounded-full font-medium border ${
+                    pipelineStage?.stage === 'verifier' || pipelineStage?.stage === 'router'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : 'bg-purple-500/15 text-purple-300 border-purple-500/30 animate-pulse'
+                  }`}
+                >
+                  Extractor Agent
+                </span>
+                <span>→</span>
+                <span
+                  className={`px-2.5 py-0.5 rounded-full font-medium border ${
+                    pipelineStage?.stage === 'verifier'
+                      ? 'bg-purple-500/15 text-purple-300 border-purple-500/30 animate-pulse'
+                      : 'bg-slate-800/80 text-slate-500 border-slate-700/60'
+                  }`}
+                >
+                  Verifier Agent
+                </span>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-slate-300">No action items extracted yet</p>
-              <p className="text-xs text-slate-400 mt-1 max-w-xs">
-                Candidate tasks will appear here as soon as the Extractor Agent processes the transcript.
-              </p>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full min-h-[260px] text-center p-6 space-y-3">
+              <div className="w-12 h-12 rounded-full bg-slate-800/60 border border-slate-700/50 flex items-center justify-center text-slate-400 animate-subtle-pulse">
+                <ListCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-300">No action items extracted yet</p>
+                <p className="text-xs text-slate-400 mt-1 max-w-xs">
+                  {filterType !== 'all'
+                    ? `No ${filterType === 'decision' ? 'decisions' : 'action items'} found. Switch filter to "All" to view all items.`
+                    : 'No candidate tasks were detected for this meeting recording.'}
+                </p>
+              </div>
             </div>
-          </div>
+          )
         ) : (
           filteredItems.map((item) => {
             const badge = getItemBadge(item);

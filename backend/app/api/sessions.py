@@ -17,6 +17,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+import httpx
+
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,11 +74,13 @@ async def run_audio_pipeline(session_id: str, audio_path: str):
             "message": "Preprocessing audio...",
         })
 
+        import asyncio
+
         # 1. Preprocess
-        cleaned_path = preprocess_audio(audio_path)
+        cleaned_path = await asyncio.to_thread(preprocess_audio, audio_path)
 
         # 2. Chunking
-        chunks = chunk_audio(cleaned_path)
+        chunks = await asyncio.to_thread(chunk_audio, cleaned_path)
         logger.info(f"Session {session_id}: {len(chunks)} chunk(s) to transcribe")
 
         # 3. Transcribe & stream
@@ -89,7 +93,7 @@ async def run_audio_pipeline(session_id: str, audio_path: str):
 
         async with async_session() as db:
             for chunk_file in chunks:
-                segments = transcribe_chunk(chunk_file)
+                segments = await asyncio.to_thread(transcribe_chunk, chunk_file)
                 for seg in segments:
                     # Save DB segment
                     db_seg = TranscriptSegmentModel(
@@ -108,7 +112,7 @@ async def run_audio_pipeline(session_id: str, audio_path: str):
                         "data": seg,
                     })
 
-            await db.commit()
+                await db.commit()
 
         await broadcast(session_id, {
             "type": "pipeline_status",
@@ -319,6 +323,40 @@ async def get_session(
             for item in items
         ],
     }
+
+
+# ═══════════════════════════════════════════════
+# DELETE /api/v1/sessions/{session_id} — Delete a session
+# ═══════════════════════════════════════════════
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_session(
+    session_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete a session, its transcript segments, task items, and associated audio file."""
+    result = await db.execute(
+        select(SessionModel).where(SessionModel.id == session_id)
+    )
+    session = result.scalar_one_or_none()
+
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    # Clean up audio file on disk if present
+    if session.audio_path and os.path.exists(session.audio_path):
+        try:
+            os.remove(session.audio_path)
+            logger.info(f"Removed audio file {session.audio_path} for session {session_id}")
+        except Exception as e:
+            logger.warning(f"Could not remove audio file {session.audio_path}: {e}")
+
+    await db.delete(session)
+    await db.commit()
+
+    logger.info(f"Session {session_id} deleted successfully")
+    return {"message": "Session deleted successfully", "id": session_id}
 
 
 # ═══════════════════════════════════════════════

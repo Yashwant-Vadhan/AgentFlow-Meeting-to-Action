@@ -25,6 +25,7 @@ import time
 import wave
 from typing import Optional
 
+import httpx as requests
 import pytest
 
 # Mark all tests in this module as e2e (skipped by default)
@@ -68,7 +69,7 @@ def _generate_test_wav_bytes(duration_s: float = 5.0) -> bytes:
 
 def _poll_session_status(session_id: str, timeout: int = TIMEOUT) -> dict:
     """Poll the session endpoint until status is no longer 'processing' or timeout."""
-    import requests
+        # Using module-level httpx client
 
     deadline = time.time() + timeout
 
@@ -98,7 +99,7 @@ class TestE2EHappyPath:
 
     def test_health_check(self):
         """Backend is up and responding."""
-        import requests
+            # Using module-level httpx client
 
         resp = requests.get(f"{BASE_URL}/health", timeout=5)
         assert resp.status_code == 200
@@ -107,7 +108,7 @@ class TestE2EHappyPath:
 
     def test_upload_creates_session(self):
         """POST /api/v1/sessions with a valid audio file creates a session."""
-        import requests
+            # Using module-level httpx client
 
         wav_bytes = _generate_test_wav_bytes(duration_s=3.0)
 
@@ -126,7 +127,7 @@ class TestE2EHappyPath:
 
     def test_session_pipeline_completes(self):
         """Uploaded session eventually reaches 'complete' or 'error' status."""
-        import requests
+            # Using module-level httpx client
 
         wav_bytes = _generate_test_wav_bytes(duration_s=3.0)
 
@@ -152,7 +153,7 @@ class TestE2EHappyPath:
 
     def test_list_sessions(self):
         """GET /api/v1/sessions returns a list."""
-        import requests
+            # Using module-level httpx client
 
         resp = requests.get(f"{API_V1}/sessions", timeout=10)
         assert resp.status_code == 200
@@ -165,7 +166,7 @@ class TestE2EErrorHandling:
 
     def test_reject_invalid_file_type(self):
         """Uploading a non-audio file returns 400."""
-        import requests
+            # Using module-level httpx client
 
         resp = requests.post(
             f"{API_V1}/sessions",
@@ -177,7 +178,7 @@ class TestE2EErrorHandling:
 
     def test_reject_oversized_file(self):
         """Uploading a file > 200MB returns 400 (simulated with headers)."""
-        import requests
+            # Using module-level httpx client
 
         # Generate a small file but test the endpoint still validates
         # (actual 200MB file test would be too slow; we trust the server-side check)
@@ -193,7 +194,7 @@ class TestE2EErrorHandling:
 
     def test_get_nonexistent_session(self):
         """GET a nonexistent session returns 404."""
-        import requests
+            # Using module-level httpx client
 
         resp = requests.get(
             f"{API_V1}/sessions/nonexistent-id-12345",
@@ -203,7 +204,7 @@ class TestE2EErrorHandling:
 
     def test_patch_nonexistent_item(self):
         """PATCH a nonexistent item returns 404."""
-        import requests
+            # Using module-level httpx client
 
         resp = requests.patch(
             f"{API_V1}/sessions/fake-session/items/fake-item",
@@ -223,7 +224,7 @@ class TestE2ENeedsReview:
         This test creates a session and then tries to patch a non-existent item,
         which will 404 — validating the endpoint guard logic.
         """
-        import requests
+            # Using module-level httpx client
 
         wav_bytes = _generate_test_wav_bytes(duration_s=2.0)
 
@@ -348,7 +349,7 @@ if __name__ == "__main__":
     print(f"  E2E Test Runner — {BASE_URL}")
     print(f"{'='*60}\n")
 
-    import requests
+        # Using module-level httpx client
 
     # 1. Health check
     print("1. Health check...", end=" ")

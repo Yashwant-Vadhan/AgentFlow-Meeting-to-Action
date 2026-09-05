@@ -9,6 +9,11 @@ export default function TranscriptPane({ sessionId, initialSegments = [], isProc
   const scrollContainerRef = useRef(null);
   const wsRef = useRef(null);
 
+  // Reset segments when sessionId changes
+  useEffect(() => {
+    setSegments(initialSegments || []);
+  }, [sessionId]);
+
   // Sync initial segments if provided
   useEffect(() => {
     if (initialSegments && initialSegments.length > 0) {

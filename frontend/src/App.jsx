@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Upload, History, RefreshCw, Layers, CheckCircle, Clock, AlertCircle, Workflow, Trello, ExternalLink } from 'lucide-react';
+import { Sparkles, Upload, History, RefreshCw, Layers, CheckCircle, Clock, AlertCircle, Workflow, Trello, ExternalLink, Trash2 } from 'lucide-react';
 import UploadScreen from './components/UploadScreen.jsx';
 import TranscriptPane from './components/TranscriptPane.jsx';
 import TaskPipelinePane from './components/TaskPipelinePane.jsx';
@@ -21,6 +21,18 @@ export default function App() {
     if (!currentSession?.id) return;
     loadSessionDetails(currentSession.id);
   }, [currentSession?.id]);
+
+  // Auto-sync session data while processing (complements live WebSocket)
+  useEffect(() => {
+    if (!currentSession?.id) return;
+    if (sessionData && sessionData.status !== 'processing') return;
+
+    const interval = setInterval(() => {
+      loadSessionDetails(currentSession.id);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [currentSession?.id, sessionData?.status]);
 
   const fetchSessions = async () => {
     try {
@@ -49,6 +61,32 @@ export default function App() {
     }
   };
 
+  const handleDeleteSession = async (id, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/v1/sessions/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        // If current session was deleted, clear it
+        if (currentSession?.id === id) {
+          setCurrentSession(null);
+          setSessionData(null);
+        }
+        await fetchSessions();
+      } else {
+        alert('Failed to delete session');
+      }
+    } catch (err) {
+      console.error('Error deleting session:', err);
+      alert('Error deleting session');
+    }
+  };
+
   const handleSessionCreated = (session) => {
     setCurrentSession(session);
     setSessionData({
@@ -64,6 +102,7 @@ export default function App() {
 
   const handleSelectSession = (s) => {
     setCurrentSession(s);
+    setSessionData(null);
     setShowHistoryDrawer(false);
   };
 
@@ -168,15 +207,26 @@ export default function App() {
                 </h1>
               </div>
 
-              {/* Reload / Refresh Button */}
-              <button
-                onClick={() => loadSessionDetails(currentSession.id)}
-                disabled={isLoadingSession}
-                className="self-start md:self-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700/60 transition-colors"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSession ? 'animate-spin' : ''}`} />
-                <span>Refresh Session</span>
-              </button>
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 self-start md:self-auto">
+                <button
+                  onClick={() => loadSessionDetails(currentSession.id)}
+                  disabled={isLoadingSession}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700/60 transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSession ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
+                </button>
+
+                <button
+                  onClick={(e) => handleDeleteSession(currentSession.id, e)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 text-xs font-medium border border-red-800/40 transition-colors"
+                  title="Delete this session"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                  <span>Delete</span>
+                </button>
+              </div>
             </div>
 
             {/* Split View: Transcript Pane (Left) + Task Pipeline Pane (Right) */}
@@ -189,6 +239,7 @@ export default function App() {
               <TaskPipelinePane
                 sessionId={currentSession.id}
                 initialItems={sessionData?.items || []}
+                isProcessing={sessionData?.status === 'processing'}
               />
             </div>
           </div>
@@ -220,17 +271,26 @@ export default function App() {
                   <div
                     key={s.id}
                     onClick={() => handleSelectSession(s)}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer group ${
                       currentSession?.id === s.id
                         ? 'bg-indigo-600/15 border-indigo-500/40 text-white'
                         : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-800/40'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold truncate text-slate-100">{s.name}</span>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        {new Date(s.created_at).toLocaleDateString()}
-                      </span>
+                      <span className="text-xs font-semibold truncate text-slate-100 flex-1 pr-2">{s.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {new Date(s.created_at).toLocaleDateString()}
+                        </span>
+                        <button
+                          onClick={(e) => handleDeleteSession(s.id, e)}
+                          className="p-1 rounded-md text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-colors opacity-70 group-hover:opacity-100"
+                          title="Delete session"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-slate-400">
                       <span>{s.item_count} action items</span>

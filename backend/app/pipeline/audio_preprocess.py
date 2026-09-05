@@ -51,42 +51,14 @@ CHUNK_MAX_SECONDS = 60
 
 def _apply_high_pass_filter(audio: AudioSegment, cutoff_hz: int = HIGH_PASS_CUTOFF_HZ) -> AudioSegment:
     """
-    Apply a simple high-pass filter to remove low-frequency hum.
-
-    Uses a first-order Butterworth-style filter implemented via numpy.
+    Apply a high-pass filter to remove low-frequency hum.
     """
-    samples = np.array(audio.get_array_of_samples(), dtype=np.float64)
-    sample_rate = audio.frame_rate
-    channels = audio.channels
-
-    # Reshape for multi-channel audio
-    if channels > 1:
-        samples = samples.reshape((-1, channels))
-
-    # Simple first-order high-pass filter: y[n] = alpha * (y[n-1] + x[n] - x[n-1])
-    rc = 1.0 / (2.0 * np.pi * cutoff_hz)
-    dt = 1.0 / sample_rate
-    alpha = rc / (rc + dt)
-
-    if channels > 1:
-        filtered = np.zeros_like(samples)
-        for ch in range(channels):
-            filtered[0, ch] = samples[0, ch]
-            for i in range(1, len(samples)):
-                filtered[i, ch] = alpha * (filtered[i - 1, ch] + samples[i, ch] - samples[i - 1, ch])
-        filtered = filtered.flatten()
-    else:
-        filtered = np.zeros_like(samples)
-        filtered[0] = samples[0]
-        for i in range(1, len(samples)):
-            filtered[i] = alpha * (filtered[i - 1] + samples[i] - samples[i - 1])
-
-    # Clip to valid range for the sample width
-    max_val = (2 ** (audio.sample_width * 8 - 1)) - 1
-    min_val = -(2 ** (audio.sample_width * 8 - 1))
-    filtered = np.clip(filtered, min_val, max_val).astype(np.int16)
-
-    return audio._spawn(filtered.tobytes())
+    try:
+        from pydub.effects import high_pass_filter
+        return high_pass_filter(audio, cutoff_hz)
+    except Exception as e:
+        logger.warning("high_pass_filter failed (%s), returning original audio", e)
+        return audio
 
 
 def _apply_noise_reduction(audio: AudioSegment) -> AudioSegment:
