@@ -234,6 +234,13 @@ async def process_session(session_id: str, db: AsyncSession) -> None:
         else:
             db_item.pipeline_status = PipelineStatus.NEEDS_REVIEW.value
 
+    # Guard: Ensure no candidate items remain stranded in 'extracted' status
+    for db_item in db_items.values():
+        if db_item.pipeline_status == PipelineStatus.EXTRACTED.value:
+            db_item.pipeline_status = PipelineStatus.NEEDS_REVIEW.value
+            db_item.verification_status = VerificationStatus.NEEDS_REVIEW.value
+            db_item.verification_reason = "Unverified candidate: marked for manual review"
+
     await db.commit()
     for db_item in db_items.values():
         await _broadcast_task_update(session_id, db_item)

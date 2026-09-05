@@ -137,9 +137,10 @@ async def verify(
         return verified_items
 
     # ── Step 2: Deduplicate ──
-    deduplicated_items = await deduplicate(valid_items)
+    deduplicated_items, duplicate_rejected = await _deduplicate_internal(valid_items)
+    verified_items.extend(duplicate_rejected)
     logger.info(
-        f"After deduplication: {len(valid_items)} → {len(deduplicated_items)} items"
+        f"After deduplication: {len(valid_items)} → {len(deduplicated_items)} items ({len(duplicate_rejected)} duplicates marked rejected)"
     )
 
     # ── Step 3: LLM-based verification for each item ──
@@ -250,20 +251,30 @@ Verify this item against the transcript and return your JSON assessment."""
 async def deduplicate(
     items: list[CandidateItem],
 ) -> list[CandidateItem]:
+    """Public deduplication helper (returns deduplicated items)."""
+    deduped, _ = await _deduplicate_internal(items)
+    return deduped
+
+
+async def _deduplicate_internal(
+    items: list[CandidateItem],
+) -> tuple[list[CandidateItem], list[VerifiedItem]]:
     """
     Detect and merge duplicate candidate items.
 
     Uses the LLM to identify semantically similar items, then merges each
     group into a single item keeping the most specific owner and deadline.
+    Any non-primary duplicates are recorded as rejected items so they don't
+    remain stranded in the database.
 
     Args:
         items: List of candidate items to deduplicate.
 
     Returns:
-        Deduplicated list of candidate items.
+        Tuple of (deduplicated_candidate_items, rejected_duplicate_verified_items).
     """
     if len(items) <= 1:
-        return items
+        return items, []
 
     # Build a summary for the LLM
     items_summary = []
@@ -289,15 +300,16 @@ Return ONLY a JSON array of groups (each group is an array of item IDs)."""
         )
     except (ValueError, Exception) as e:
         logger.warning(f"Deduplication LLM call failed: {e}. Skipping deduplication.")
-        return items
+        return items, []
 
     if not isinstance(groups, list):
         logger.warning("Deduplication returned non-list response. Skipping.")
-        return items
+        return items, []
 
     # Build a lookup map
     item_map = {item.id: item for item in items}
     merged_items: list[CandidateItem] = []
+    duplicate_rejected: list[VerifiedItem] = []
     seen_ids: set[str] = set()
 
     for group in groups:
@@ -324,12 +336,24 @@ Return ONLY a JSON array of groups (each group is an array of item IDs)."""
             )
             merged_items.append(merged)
 
+            # Mark all other items in this duplicate group as rejected duplicates
+            for other in group_items:
+                if other.id != merged.id:
+                    duplicate_rejected.append(
+                        VerifiedItem(
+                            id=other.id,
+                            status=VerificationStatus.REJECTED,
+                            reason=f"Duplicate task: merged into '{merged.description[:60]}'.",
+                            final_task=None,
+                        )
+                    )
+
     # Add any items not covered by the LLM's groups (safety net)
     for item in items:
         if item.id not in seen_ids:
             merged_items.append(item)
 
-    return merged_items
+    return merged_items, duplicate_rejected
 
 
 def _merge_items(items: list[CandidateItem]) -> CandidateItem:
