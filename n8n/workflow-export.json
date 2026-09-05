@@ -62,15 +62,15 @@
           "parameters": [
             {
               "name": "key",
-              "value": "d14e721864ea551ee7fdb60f215fb7b1"
+              "value": "={{ $env.TRELLO_API_KEY }}"
             },
             {
               "name": "token",
-              "value": "ATTAae42869438cd57fba48d1c878e3849eeaef96060ead57f26f14d2ec9a857639bA76136D9"
+              "value": "={{ $env.TRELLO_TOKEN }}"
             },
             {
               "name": "idList",
-              "value": "6a8ff90f0cc9b486fe7ae9bf"
+              "value": "={{ $env.TRELLO_LIST_ID }}"
             },
             {
               "name": "name",
@@ -133,7 +133,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://discord.com/api/webhooks/1544059591472713728/DmqtTEES3JcpY3Qt0Uw1B4ug8yly5wyIuTDHZsLL5cKIdH8GsKl_yb4Ye_fVRhTOwasf",
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
         "options": {},
         "sendHeaders": true,
         "headerParameters": {

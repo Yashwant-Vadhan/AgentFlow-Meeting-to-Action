@@ -53,6 +53,9 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - backend-uploads:/app/uploads
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     networks:
       - mta-network
     healthcheck:
@@ -70,6 +73,11 @@ services:
       - .env
     ports:
       - "5678:5678"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "api.trello.com:108.159.15.90"
+      - "trello.com:108.159.15.90"
+      - "discord.com:162.159.137.232"
     environment:
       # Basic n8n config
       N8N_HOST: ${N8N_HOST:-localhost}
