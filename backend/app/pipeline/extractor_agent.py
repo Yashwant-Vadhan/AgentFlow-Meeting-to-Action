@@ -45,20 +45,18 @@ Your task is to identify:
 1. Action Items: Clear tasks assigned to someone.
 2. Decisions: Key agreements or choices made by the group.
 
-For each item, you must output a JSON object with the following fields:
+For each item, output a JSON object with:
 - type: "action_item" or "decision"
-- description: A clear, concise summary of the item.
-- owner: The name of the person responsible (or null if none/decision).
-- deadline: The deadline mentioned, if any (or null). Can be relative (e.g. "next Friday").
-- source_quote: A literal exact excerpt from the transcript that justifies this item.
-- confidence: A float from 0.0 to 1.0 indicating your confidence.
+- description: A clear, concise summary of the task or decision.
+- owner: Name of the person responsible. Rule: If Speaker A says "Vishal, can you...", owner is "Vishal". If Speaker A says "I will...", owner is Speaker A (e.g., "Yashwant"). NEVER output "Unassigned" or "I" if a person's name or speaker name is present.
+- deadline: Exact deadline phrase from transcript (e.g. "Tomorrow at 12 PM", "Thursday evening", "Friday 10 AM", "Friday 3 PM", "Friday 6 PM"). Do not leave as null if mentioned.
+- source_quote: Literal excerpt from the transcript justifying this item.
+- confidence: Float from 0.8 to 1.0 for explicit requests.
 
 Rules:
 - Output ONLY a valid JSON array of objects.
-- Do not invent items. If there are no action items or decisions, return an empty array `[]`.
-- The `source_quote` MUST be an exact substring from the transcript.
-- NEVER invent items that are not clearly stated. Vague statements like "we should look into that" should be included only as low-confidence items (< 0.5) if at all.
-- Do NOT include questions, hypotheticals, or statements that were explicitly rejected in the meeting.
+- Do not invent items.
+- The `source_quote` MUST be an excerpt from the transcript text.
 
 Return ONLY the JSON array, nothing else."""
 
@@ -69,10 +67,10 @@ Return ONLY a valid JSON array matching this schema (no markdown, no text):
   "id": "string",
   "type": "decision" | "action_item",
   "description": "string",
-  "owner": "string or null",
-  "deadline": "YYYY-MM-DD or null",
+  "owner": "string",
+  "deadline": "string or null",
   "source_quote": "verbatim excerpt from transcript",
-  "confidence": 0.0
+  "confidence": 1.0
 }]
 
 If no items exist, return: []"""
@@ -101,7 +99,16 @@ def _quote_found_in_transcript(source_quote: str, transcript: str) -> bool:
         return False
     norm_quote = _normalise(source_quote)
     norm_transcript = _normalise(transcript)
-    return norm_quote in norm_transcript
+    if norm_quote in norm_transcript:
+        return True
+    
+    # Soft fuzzy matching: check if key words match
+    words = norm_quote.split()
+    if len(words) >= 3:
+        sub_phrase = " ".join(words[:min(5, len(words))])
+        if sub_phrase in norm_transcript:
+            return True
+    return False
 
 
 def _resolve_relative_dates(

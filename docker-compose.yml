@@ -41,13 +41,13 @@ services:
       - "8000:8000"
     environment:
       # LLM — Ollama runs on the HOST machine; host.docker.internal resolves to it
-      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      OLLAMA_HOST: http://host.docker.internal:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1}
       # n8n webhook — backend calls n8n via the Docker service name
       N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://n8n:5678/webhook/verified-task}
       DATABASE_URL: ${DATABASE_URL:-sqlite+aiosqlite:///./uploads/meeting_to_action.db}
       MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-200}
-      WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE:-base}
+      WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE:-medium}
       HF_HOME: /app/uploads/.whisper_cache/huggingface
     extra_hosts:
       - "host.docker.internal:host-gateway"

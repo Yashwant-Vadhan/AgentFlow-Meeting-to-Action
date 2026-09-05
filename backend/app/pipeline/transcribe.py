@@ -77,8 +77,14 @@ def transcribe_chunk(audio_path: str, model_size: Optional[str] = None) -> list[
         segments_raw, info = model.transcribe(
             audio_path,
             beam_size=5,
+            best_of=5,
+            patience=1.0,
+            temperature=[0.0, 0.2, 0.4],
+            condition_on_previous_text=False,
+            initial_prompt="Meeting transcript with clear action items, project decisions, owner assignments, deadlines, and technical discussion.",
             vad_filter=True,
-            vad_parameters=dict(min_silence_duration_ms=500),
+            vad_parameters=dict(min_silence_duration_ms=400, speech_pad_ms=300, threshold=0.35),
+            hallucination_silence_threshold=2.0,
         )
 
         results: list[dict[str, Any]] = []

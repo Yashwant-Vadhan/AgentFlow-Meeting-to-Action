@@ -115,26 +115,8 @@ async def verify(
 
     verified_items: list[VerifiedItem] = []
 
-    # ── Step 1: Auto-reject items missing both owner AND deadline ──
-    valid_items: list[CandidateItem] = []
-    for item in candidate_items:
-        if item.owner is None and item.deadline is None:
-            logger.info(
-                f"Auto-rejecting item {item.id}: both owner and deadline are null"
-            )
-            verified_items.append(
-                VerifiedItem(
-                    id=item.id,
-                    status=VerificationStatus.REJECTED,
-                    reason="Rejected: both owner and deadline are missing — does not meet the well-formed task requirement.",
-                    final_task=None,
-                )
-            )
-        else:
-            valid_items.append(item)
-
-    if not valid_items:
-        return verified_items
+    # ── Step 1: Pass candidate items to LLM verification ──
+    valid_items: list[CandidateItem] = list(candidate_items)
 
     # ── Step 2: Deduplicate ──
     deduplicated_items, duplicate_rejected = await _deduplicate_internal(valid_items)

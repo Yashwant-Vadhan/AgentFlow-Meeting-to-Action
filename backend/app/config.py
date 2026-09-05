@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     ollama_model: str = "llama3.1"
 
     # ── Whisper STT ───────────────────────────────
-    whisper_model_size: str = "base"
+    whisper_model_size: str = "medium"
     whisper_device: str = "cpu"
 
     # ── Database ──────────────────────────────────

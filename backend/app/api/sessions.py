@@ -91,27 +91,44 @@ async def run_audio_pipeline(session_id: str, audio_path: str):
             "message": "Transcribing audio with Whisper...",
         })
 
+        from pydub import AudioSegment
+
         async with async_session() as db:
+            current_offset = 0.0
             for chunk_file in chunks:
+                try:
+                    chunk_audio_obj = await asyncio.to_thread(AudioSegment.from_file, chunk_file)
+                    chunk_duration = len(chunk_audio_obj) / 1000.0
+                except Exception:
+                    chunk_duration = 0.0
+
                 segments = await asyncio.to_thread(transcribe_chunk, chunk_file)
                 for seg in segments:
-                    # Save DB segment
+                    abs_start = round(current_offset + seg["start"], 2)
+                    abs_end = round(current_offset + seg["end"], 2)
+
+                    # Save DB segment with absolute timestamps
                     db_seg = TranscriptSegmentModel(
                         session_id=session_id,
-                        start_time=seg["start"],
-                        end_time=seg["end"],
+                        start_time=abs_start,
+                        end_time=abs_end,
                         text=seg["text"],
                         low_confidence=seg.get("low_confidence", False),
                     )
                     db.add(db_seg)
 
-                    # Broadcast WS message
+                    # Broadcast WS message with absolute timestamps
+                    seg_data = dict(seg)
+                    seg_data["start"] = abs_start
+                    seg_data["end"] = abs_end
+
                     await broadcast(session_id, {
                         "type": "transcript_segment",
                         "session_id": session_id,
-                        "data": seg,
+                        "data": seg_data,
                     })
 
+                current_offset += chunk_duration
                 await db.commit()
 
         await broadcast(session_id, {

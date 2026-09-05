@@ -91,7 +91,7 @@ def _apply_noise_reduction(audio: AudioSegment) -> AudioSegment:
             reduced = nr.reduce_noise(
                 y=channel_data,
                 sr=sample_rate,
-                prop_decrease=0.75,
+                prop_decrease=0.4,
                 stationary=True,
             )
             reduced_channels.append(reduced)
@@ -100,7 +100,7 @@ def _apply_noise_reduction(audio: AudioSegment) -> AudioSegment:
         reduced_samples = nr.reduce_noise(
             y=samples,
             sr=sample_rate,
-            prop_decrease=0.75,
+            prop_decrease=0.4,
             stationary=True,
         )
 

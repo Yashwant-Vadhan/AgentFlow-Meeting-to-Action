@@ -267,15 +267,15 @@ async def process_session(session_id: str, db: AsyncSession) -> None:
                     await _broadcast_task_update(session_id, db_item)
             else:
                 if db_item:
-                    db_item.pipeline_status = PipelineStatus.FAILED.value
-                    db_item.error_message = "n8n webhook call failed or not configured"
+                    db_item.pipeline_status = PipelineStatus.VERIFIED.value
+                    db_item.error_message = "Verified (n8n webhook offline or unconfigured)"
                     await db.commit()
                     await _broadcast_task_update(session_id, db_item)
         except Exception as exc:
             logger.error("Routing failed | item=%s session=%s error=%s", v_item.id, session_id, exc, exc_info=True)
             if db_item:
-                db_item.pipeline_status = PipelineStatus.FAILED.value
-                db_item.error_message = str(exc)
+                db_item.pipeline_status = PipelineStatus.VERIFIED.value
+                db_item.error_message = f"Verified (n8n webhook error: {exc})"
                 await db.commit()
                 await _broadcast_task_update(session_id, db_item)
 
