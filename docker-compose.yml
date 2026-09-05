@@ -88,6 +88,8 @@ services:
       GENERIC_TIMEZONE: Asia/Kolkata
       # Disable telemetry
       N8N_DIAGNOSTICS_ENABLED: "false"
+      # Allow nodes to access environment variables at execution time
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
     volumes:
       - n8n-data:/home/node/.n8n
     networks:
